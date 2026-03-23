@@ -10,13 +10,13 @@
 
 @import "~/.cache/wal/colors-rofi.rasi"
 
-* { border-width: 3px; }
+* { border-width: 1px; }
 
 /* ---- Configuration ---- */
 configuration {
     modi:                       "drun,run";
     font:                       "Fira Sans 11";
-    show-icons:                 false;
+    show-icons:                 true;
     icon-theme:                 "kora";
     display-drun:               "APPS";
     display-run:                "RUN";
@@ -38,7 +38,8 @@ window {
     y-offset:                     65px;
     spacing:                      0px;
     padding:                      0px;
-    margin:                       0px; 
+    margin:                       0px;
+    border-radius:                10px;
     cursor:                       "default";
     transparency:                 "real";
     location:                     north;
