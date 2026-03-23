@@ -33,7 +33,6 @@ Each directory is a GNU Stow package that symlinks into `$HOME`:
 | `dunst/` | `~/.config/dunst/` | Notification daemon config |
 | `kitty/` | `~/.config/kitty/` | Terminal emulator + DesertNight theme |
 | `wal/` | `~/.config/wal/templates/` | Pywal templates for Hyprland + Waybar colors |
-| `ml4w/` | `~/.config/ml4w/` | ML4W settings + helper scripts |
 | `shell/` | `~/` | `.bashrc`, `.bash_profile` |
 | `scripts/` | `~/Documents/system/` | Theme-switcher, update-prompt |
 

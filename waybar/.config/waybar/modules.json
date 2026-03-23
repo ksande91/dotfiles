@@ -42,8 +42,20 @@
         "format": "Apps",
         "tooltip-format": "Left: Open the application launcher\nRight: Show all keybindings",
         "on-click": "rofi -show drun -replace",
-        "on-click-right": "~/.config/ml4w/scripts/keybindings.sh",
+        "on-click-right": "~/.config/waybar/scripts/keybindings.sh",
         "tooltip": false
+    },
+
+    // Quicklinks
+    "custom/browser": {
+        "format": " ",
+        "on-click": "firefox",
+        "tooltip-format": "Open the browser"
+    },
+    "custom/filemanager": {
+        "format": " ",
+        "on-click": "dolphin",
+        "tooltip-format": "Open the file manager"
     },
     
     // Power Menu
