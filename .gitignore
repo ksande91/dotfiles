@@ -1,0 +1,17 @@
+# Secrets - NEVER commit
+.bashrc_secrets
+shell/.bashrc_secrets
+
+# Compiled binaries
+scripts/Documents/system/update-prompt/update_prompt
+
+# Cache / generated
+*.pyc
+__pycache__/
+.cache/
+
+# ML4W AppImage (large binary)
+ml4w/.config/ml4w/apps/
+
+# OS
+.DS_Store

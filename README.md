@@ -1,56 +1,94 @@
-# Dotfiles Installation for Hyprland
+# Dotfiles — Hyprland Desktop
 
-This project contains the necessary configuration files for setting up **Hyprland**, a Wayland compositor, with custom configurations for **Hyprland** and **Hyprlock**. The installation is automated through a simple bash script (`install.sh`), which will copy the configuration files from the repository to the appropriate locations in your home directory.
+Arch Linux + Hyprland desktop environment managed with [GNU Stow](https://www.gnu.org/software/stow/). Dynamic theming via pywal, AI-powered wallpaper generation, and modular config layout.
 
-## Table of Contents
+## Quick Start
 
-- [Installation](#installation)
-- [Configuration Files](#configuration-files)
-- [Directory Structure](#directory-structure)
-- [Customization](#customization)
-- [License](#license)
+```bash
+# On a fresh Arch install
+git clone <repo-url> ~/dotfiles
+cd ~/dotfiles
+./install.sh
+```
 
-## Installation
+The bootstrap script handles everything: system packages, AUR helper (yay), pyenv, nvm, dotfile symlinks, Go tool builds, and initial pywal theme setup.
 
-1. Clone the repository to your local machine:
+You can also run individual steps:
 
+```bash
+./install.sh link_dotfiles
+./install.sh setup_python
+./install.sh build_go_tools
+```
+
+## Stow Packages
+
+Each directory is a GNU Stow package that symlinks into `$HOME`:
+
+| Package | Target | Contents |
+|---------|--------|----------|
+| `hypr/` | `~/.config/hypr/` | Hyprland + hyprlock config (modular split) |
+| `waybar/` | `~/.config/waybar/` | Bar config, pywal-themed style, modules |
+| `rofi/` | `~/.config/rofi/` | Application launcher config |
+| `dunst/` | `~/.config/dunst/` | Notification daemon config |
+| `kitty/` | `~/.config/kitty/` | Terminal emulator + DesertNight theme |
+| `wal/` | `~/.config/wal/templates/` | Pywal templates for Hyprland + Waybar colors |
+| `ml4w/` | `~/.config/ml4w/` | ML4W settings + helper scripts |
+| `shell/` | `~/` | `.bashrc`, `.bash_profile` |
+| `scripts/` | `~/Documents/system/` | Theme-switcher, update-prompt |
+
+## Theming
+
+Colors are generated dynamically from the current wallpaper using **pywal**:
+
+1. Pick a wallpaper via `Super+T` (rofi image picker) or `Super+W` (wallpaper-ai)
+2. Pywal extracts a color palette and writes it to `~/.cache/wal/`
+3. Templates in `wal/.config/wal/templates/` generate:
+   - `colors-hyprland.conf` — border colors (`$color0`–`$color15`)
+   - `colors-waybar.css` — `@define-color` variables for the bar
+4. Hyprland and Waybar both source these generated files
+
+## Key Bindings
+
+| Bind | Action |
+|------|--------|
+| `Super+Q` | Terminal (kitty) |
+| `Super+R` | App launcher (rofi) |
+| `Super+B` | Browser (firefox) |
+| `Super+E` | File manager |
+| `Super+T` | Theme switcher (rofi wallpaper picker) |
+| `Super+W` | wallpaper-ai (AI wallpaper generator) |
+| `Super+Shift+W` | Random AI wallpaper from learned preferences |
+| `Super+F1–F5` | Rate current wallpaper (1–5) |
+| `Super+L` | Lock screen (hyprlock) |
+| `Super+Shift+P` | Screenshot (grim + slurp) |
+| `Super+1–0` | Switch workspace |
+| `Alt+R` | Enter resize mode (arrows to resize, Esc to exit) |
+
+## Custom Tools
+
+### theme-switcher
+Bash script that uses rofi to browse wallpapers with thumbnails, applies the selection via pywal + swww, and updates hyprlock.
+
+### update-prompt
+Go TUI (Bubble Tea) that prompts for system updates (`yay -Syu`) on login. Launched automatically on startup in a floating kitty window.
+
+### wallpaper-ai
+Separate Python project ([repo](~/Documents/personal/wallpaper-ai)) — generates wallpapers with AI, learns preferences from ratings. Requires `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `FAL_KEY`.
+
+## Post-Install
+
+1. **API keys** — copy the example and fill in your keys:
    ```bash
-   git clone <repository-url> ~/.dotfiles
+   cp ~/dotfiles/shell/.bashrc_secrets.example ~/.bashrc_secrets
    ```
-
-2. Navigate to the directory:
-
+2. **Monitors** — edit for your hardware:
    ```bash
-   cd ~/.dotfiles
+   vim ~/.config/hypr/conf/monitors.conf
+   # Use 'hyprctl monitors' to see detected outputs
    ```
-
-3. Run the `install.sh` script to install the dotfiles:
-
-   ```bash
-   ./install.sh
-   ```
-
-   The script will:
-
-   - Check if the necessary directories exist and create them if they don't.
-   - Back up existing configuration files if they already exist.
-   - Copy the custom configuration files for **Hyprland** and **Hyprlock** into the correct directories.
-
-4. After the installation is complete, the configurations for Hyprland and Hyprlock will be applied.
-
-## Configuration Files
-
-The project includes the following configuration files:
-
-- **Hyprland Configuration**: `~/.config/hypr/hyprland.conf`
-- **Hyprlock Configuration**: `~/.config/hypr/hyprlock.conf`
-
-These configuration files are placed in the respective directories inside `~/.config/hypr/` after running the installation script.
-
-## Customization
-
-You can easily modify the configuration files (`hyprland.conf` and `hyprlock.conf`) to tailor Hyprland's behavior to your needs. After you make changes to these files, you may need to restart Hyprland for the changes to take effect.
+3. **Wallpapers** — add images to `~/Pictures/wallpaper/`, then pick one with `Super+T`
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
