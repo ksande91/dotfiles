@@ -27,7 +27,7 @@ install_packages() {
         hyprland hyprlock xdg-desktop-portal-hyprland \
         waybar dunst rofi-wayland kitty \
         swww grim slurp wl-clipboard brightnessctl \
-        python-pywal neofetch starship \
+        python-pywal starship \
         ttf-fira-sans noto-fonts noto-fonts-emoji \
         papirus-icon-theme \
         pyenv go rust \

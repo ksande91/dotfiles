@@ -30,7 +30,7 @@ if [ -f ~/.bashrc_secrets ]; then
 fi
 
 if [[ $(tty) == *"pts"* ]]; then
-  neofetch
+  fastfetch 2>/dev/null
 else
   echo
   echo "Start Hyprland with command Hyprland"
