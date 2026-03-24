@@ -174,8 +174,10 @@ setup_initial_theme() {
         wal -i "$first_wallpaper"
         info "Theme generated from: $first_wallpaper"
     else
-        warn "No wallpapers found in ~/Pictures/wallpaper/"
-        warn "Add some images and run: wal -i <image>"
+        # Generate a default theme so Hyprland can start without color errors
+        wal --theme dark-decay
+        info "No wallpapers found — applied default dark theme"
+        warn "Add images to ~/Pictures/wallpaper/ and run: wal -i <image>"
     fi
 }
 
