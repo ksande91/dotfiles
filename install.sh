@@ -99,9 +99,10 @@ link_dotfiles() {
     local packages=(hypr waybar rofi dunst kitty wal shell scripts)
     for pkg in "${packages[@]}"; do
         info "  Stowing $pkg..."
-        # --adopt moves existing files into the dotfiles repo, then links
-        stow -d "$DOTFILES" -t "$HOME" --adopt "$pkg" 2>/dev/null || \
-        stow -d "$DOTFILES" -t "$HOME" "$pkg"
+        # Remove conflicting default files, then stow
+        stow -d "$DOTFILES" -t "$HOME" --adopt "$pkg" 2>/dev/null
+        # Reset any adopted files back to repo version
+        git -C "$DOTFILES" checkout -- "$pkg" 2>/dev/null
     done
 
     info "Dotfiles linked"
