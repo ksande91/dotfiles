@@ -23,6 +23,13 @@ fi
 
 echo "$changed_files" | sed 's/^/  /'
 
+# Install packages if install.sh changed
+if echo "$changed_files" | grep -q "^install.sh$"; then
+    info "Install script changed — syncing packages..."
+    source "$DOTFILES/install.sh"
+    install_packages
+fi
+
 # Re-stow everything
 info "Re-linking dotfiles..."
 packages=(hypr waybar rofi dunst kitty wal shell scripts)

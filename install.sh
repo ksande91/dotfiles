@@ -30,8 +30,12 @@ install_packages() {
         python-pywal starship \
         ttf-fira-sans noto-fonts noto-fonts-emoji \
         papirus-icon-theme \
+        pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
         pyenv go rust \
         git base-devel stow
+
+    # Enable audio services
+    systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 }
 
 # -----------------------------------------------------------------------------
