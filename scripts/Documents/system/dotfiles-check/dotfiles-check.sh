@@ -1,29 +1,24 @@
 #!/bin/bash
-# Periodically check for dotfiles repo changes and notify
+# Check for dotfiles updates on startup
 
 DOTFILES="$HOME/dotfiles"
-INTERVAL=300 # Check every 5 minutes
 
-while true; do
-    cd "$DOTFILES" || { sleep "$INTERVAL"; continue; }
+cd "$DOTFILES" || exit 1
 
-    # Fetch silently
-    git fetch origin main 2>/dev/null || continue
+# Fetch silently
+git fetch origin main 2>/dev/null || exit 1
 
-    # Compare local and remote
-    LOCAL=$(git rev-parse HEAD 2>/dev/null)
-    REMOTE=$(git rev-parse origin/main 2>/dev/null)
+# Compare local and remote
+LOCAL=$(git rev-parse HEAD 2>/dev/null)
+REMOTE=$(git rev-parse origin/main 2>/dev/null)
 
-    if [ "$LOCAL" != "$REMOTE" ]; then
-        CHANGES=$(git log --oneline HEAD..origin/main 2>/dev/null | head -5)
-        notify-send -u critical "Dotfiles Update Available" "$CHANGES" \
-            --action="update=Update Now"
+if [ "$LOCAL" != "$REMOTE" ]; then
+    CHANGES=$(git log --oneline HEAD..origin/main 2>/dev/null | head -5)
+    notify-send -u critical "Dotfiles Update Available" "$CHANGES" \
+        --action="update=Update Now"
 
-        # If user clicks "Update Now"
-        if [ $? -eq 0 ]; then
-            kitty --class Floating -e bash -c "$DOTFILES/update.sh; echo 'Press Enter to close'; read"
-        fi
+    # If user clicks "Update Now"
+    if [ $? -eq 0 ]; then
+        kitty --class Floating -e bash -c "$DOTFILES/update.sh; echo 'Press Enter to close'; read"
     fi
-
-    sleep "$INTERVAL"
-done
+fi
