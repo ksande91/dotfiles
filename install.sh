@@ -31,11 +31,14 @@ install_packages() {
         ttf-fira-sans noto-fonts noto-fonts-emoji \
         papirus-icon-theme \
         pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
+        networkmanager \
         pyenv go rust \
         git base-devel stow
 
     # Enable audio services
     systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+    # Enable network
+    sudo systemctl enable --now NetworkManager 2>/dev/null || true
 }
 
 # -----------------------------------------------------------------------------
