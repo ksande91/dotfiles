@@ -21,9 +21,10 @@ error() { echo -e "${RED}[x]${NC} $1"; }
 # -----------------------------------------------------------------------------
 install_packages() {
     info "Installing system packages..."
-    sudo pacman -Syu --noconfirm
+    sudo pacman -Syu --noconfirm || true
 
     sudo pacman -S --needed --noconfirm \
+        sof-firmware alsa-utils \
         hyprland hyprlock xdg-desktop-portal-hyprland \
         waybar dunst rofi-wayland kitty \
         swww grim slurp wl-clipboard brightnessctl \
