@@ -5,9 +5,7 @@ DOTFILES="$HOME/dotfiles"
 INTERVAL=300 # Check every 5 minutes
 
 while true; do
-    sleep "$INTERVAL"
-
-    cd "$DOTFILES" || continue
+    cd "$DOTFILES" || { sleep "$INTERVAL"; continue; }
 
     # Fetch silently
     git fetch origin main 2>/dev/null || continue
@@ -26,4 +24,6 @@ while true; do
             kitty --class Floating -e bash -c "$DOTFILES/update.sh; echo 'Press Enter to close'; read"
         fi
     fi
+
+    sleep "$INTERVAL"
 done
