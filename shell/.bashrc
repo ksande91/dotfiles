@@ -60,4 +60,5 @@ pkg() {
         [[ "$p" == -* ]] && continue
         grep -qx "$p" ~/dotfiles/packages.txt 2>/dev/null || echo "$p" >> ~/dotfiles/packages.txt
     done
+    notify-send "Dotfiles" "packages.txt updated — remember to commit and push"
 }
