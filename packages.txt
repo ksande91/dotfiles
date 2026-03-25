@@ -11,6 +11,9 @@ kitty
 swww
 python-pywal
 
+# Apps
+firefox
+
 # Utilities
 grim
 slurp
@@ -20,6 +23,9 @@ starship
 stow
 git
 base-devel
+htop
+fastfetch
+cava
 
 # Fonts
 ttf-fira-sans
