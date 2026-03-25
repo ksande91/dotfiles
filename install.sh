@@ -22,19 +22,10 @@ install_packages() {
     info "Installing system packages..."
     sudo pacman -Syu --noconfirm || true
 
-    sudo pacman -S --needed --noconfirm \
-        sof-firmware alsa-utils \
-        hyprland hyprlock xdg-desktop-portal-hyprland \
-        waybar dunst rofi-wayland kitty \
-        swww grim slurp wl-clipboard brightnessctl \
-        python-pywal starship \
-        ttf-fira-sans noto-fonts noto-fonts-emoji ttf-font-awesome otf-font-awesome ttf-nerd-fonts-symbols \
-        papirus-icon-theme \
-        pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
-        networkmanager \
-        bluez bluez-utils bluetui \
-        pyenv go rust \
-        git base-devel stow
+    # Read package list, ignoring comments and blank lines
+    local pkgs
+    pkgs=$(grep -v '^#\|^$' "$DOTFILES/packages.txt")
+    sudo pacman -S --needed --noconfirm $pkgs
 
     # Enable audio services
     systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
