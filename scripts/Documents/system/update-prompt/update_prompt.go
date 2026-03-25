@@ -20,32 +20,73 @@ const (
 )
 
 type model struct {
-	quitting       bool
-	message        string
-	spinner        spinner.Model
-	currentStep    step
-	runUpdate      bool
-	runDotfiles    bool
-	dotfilesAvail  bool
+	quitting        bool
+	message         string
+	spinner         spinner.Model
+	currentStep     step
+	runUpdate       bool
+	runDotfiles     bool
+	dotfilesAvail   bool
 	dotfilesChanges string
+	width           int
 }
 
 var (
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#7D56F4")).
-			Background(lipgloss.Color("#1E1E1E")).
-			Padding(1, 2).
+	purple    = lipgloss.Color("#7D56F4")
+	cyan      = lipgloss.Color("#00FFCC")
+	red       = lipgloss.Color("#FF5555")
+	green     = lipgloss.Color("#00FF88")
+	dim       = lipgloss.Color("#666666")
+	white     = lipgloss.Color("#FFFFFF")
+	darkBg    = lipgloss.Color("#1A1A2E")
+	cardBg    = lipgloss.Color("#16213E")
+	accent    = lipgloss.Color("#0F3460")
+
+	logoStyle = lipgloss.NewStyle().
+			Foreground(purple).
 			Bold(true)
 
+	titleStyle = lipgloss.NewStyle().
+			Foreground(white).
+			Background(purple).
+			Padding(0, 2).
+			Bold(true)
+
+	cardStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(purple).
+			Padding(1, 3)
+
 	questionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FFCC")).
+			Foreground(cyan).
+			Bold(true)
+
+	keyStyle = lipgloss.NewStyle().
+			Foreground(purple).
+			Background(accent).
+			Padding(0, 1).
 			Bold(true)
 
 	messageStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF5555"))
+			Foreground(red)
 
-	infoStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#AAAAAA"))
+	successStyle = lipgloss.NewStyle().
+			Foreground(green).
+			Bold(true)
+
+	dimStyle = lipgloss.NewStyle().
+			Foreground(dim)
+
+	changeStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#E2B714")).
+			PaddingLeft(2)
+
+	statusDot = lipgloss.NewStyle().
+			Foreground(green).
+			Bold(true)
+
+	statusDotOff = lipgloss.NewStyle().
+			Foreground(dim)
 )
 
 func checkDotfilesUpdates() (bool, string) {
@@ -77,7 +118,8 @@ func checkDotfilesUpdates() (bool, string) {
 
 func initialModel() model {
 	sp := spinner.New()
-	sp.Spinner = spinner.Line
+	sp.Spinner = spinner.Dot
+	sp.Style = lipgloss.NewStyle().Foreground(purple)
 
 	avail, changes := checkDotfilesUpdates()
 
@@ -106,13 +148,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.currentStep = stepDotfilesUpdate
 				} else {
 					m.quitting = true
-					m.message = "Running system update...\n"
 					return m, tea.Quit
 				}
 			} else if m.currentStep == stepDotfilesUpdate {
 				m.runDotfiles = true
 				m.quitting = true
-				m.message = "Running system update + dotfiles update...\n"
 				return m, tea.Quit
 			}
 
@@ -121,27 +161,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.dotfilesAvail {
 					m.currentStep = stepDotfilesUpdate
 				} else {
-					m.message = "Updates skipped.\n"
 					m.quitting = true
 					return m, tea.Quit
 				}
 			} else if m.currentStep == stepDotfilesUpdate {
 				m.quitting = true
-				if m.runUpdate {
-					m.message = "Running system update...\n"
-				} else {
-					m.message = "Updates skipped.\n"
-				}
 				return m, tea.Quit
 			}
 
 		case "ctrl+c", "q":
-			m.message = "Exiting...\n"
 			m.quitting = true
 			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
+		m.width = msg.Width
 
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -150,30 +184,76 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() string {
-	if m.quitting {
-		return messageStyle.Render(m.message)
+func renderSteps(current step, dotfilesAvail bool) string {
+	sys := statusDotOff.Render("○")
+	dot := statusDotOff.Render("○")
+
+	if current == stepSystemUpdate {
+		sys = statusDot.Render("●")
+	} else if current == stepDotfilesUpdate {
+		sys = dimStyle.Render("✓")
+		dot = statusDot.Render("●")
 	}
 
-	header := titleStyle.Render("🔄 System Update Utility")
+	steps := sys + dimStyle.Render(" System")
+	if dotfilesAvail {
+		steps += dimStyle.Render("  →  ") + dot + dimStyle.Render(" Dotfiles")
+	}
+	return steps
+}
 
-	var question string
-	var extra string
+func (m model) View() string {
+	if m.quitting {
+		var lines []string
+		if m.runUpdate {
+			lines = append(lines, successStyle.Render("  System update"))
+		}
+		if m.runDotfiles {
+			lines = append(lines, successStyle.Render("  Dotfiles update"))
+		}
+		if len(lines) == 0 {
+			return "\n" + dimStyle.Render("  No updates selected.") + "\n"
+		}
+		return "\n" + strings.Join(lines, "\n") + "\n"
+	}
+
+	logo := logoStyle.Render(
+		"  ╭─────────────────────╮\n" +
+		"  │  System  Manager    │\n" +
+		"  ╰─────────────────────╯")
+
+	steps := renderSteps(m.currentStep, m.dotfilesAvail)
+
+	var content string
 
 	switch m.currentStep {
 	case stepSystemUpdate:
-		question = questionStyle.Render("Would you like to update the system? (y/n)\n")
+		content = questionStyle.Render("Update system packages?") + "\n\n" +
+			dimStyle.Render("  Runs ") + lipgloss.NewStyle().Foreground(white).Render("yay -Syu") +
+			dimStyle.Render(" to update all packages") + "\n\n" +
+			keyStyle.Render("Y") + dimStyle.Render(" yes  ") +
+			keyStyle.Render("N") + dimStyle.Render(" no  ") +
+			keyStyle.Render("Q") + dimStyle.Render(" quit")
+
 	case stepDotfilesUpdate:
-		question = questionStyle.Render("Dotfiles updates available. Apply? (y/n)\n")
-		extra = infoStyle.Render(m.dotfilesChanges)
+		changeLines := strings.Split(m.dotfilesChanges, "\n")
+		var formatted []string
+		for _, line := range changeLines {
+			formatted = append(formatted, changeStyle.Render("  "+line))
+		}
+
+		content = questionStyle.Render("Dotfiles updates available") + "\n\n" +
+			dimStyle.Render("  New commits:") + "\n" +
+			strings.Join(formatted, "\n") + "\n\n" +
+			keyStyle.Render("Y") + dimStyle.Render(" apply  ") +
+			keyStyle.Render("N") + dimStyle.Render(" skip  ") +
+			keyStyle.Render("Q") + dimStyle.Render(" quit")
 	}
 
-	loading := m.spinner.View()
+	card := cardStyle.Render(content)
+	spinner := m.spinner.View()
 
-	if extra != "" {
-		return fmt.Sprintf("%s\n\n%s\n%s\n\n%s", header, question, extra, loading)
-	}
-	return fmt.Sprintf("%s\n\n%s\n\n%s", header, question, loading)
+	return fmt.Sprintf("\n%s\n\n  %s  %s\n\n%s\n", logo, steps, spinner, card)
 }
 
 func main() {
@@ -206,7 +286,9 @@ func main() {
 }
 
 func runSystemUpdate() {
-	fmt.Println("Starting the system update...")
+	fmt.Println()
+	fmt.Println(successStyle.Render("  Starting system update..."))
+	fmt.Println()
 
 	cmd := exec.Command("yay", "-Syu")
 	cmd.Stdout = os.Stdout
@@ -214,24 +296,26 @@ func runSystemUpdate() {
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error updating system: %v\n", err)
+		fmt.Printf("\n%s\n", messageStyle.Render("  Error updating system: "+err.Error()))
 	} else {
-		fmt.Println("\nSystem update completed successfully!")
+		fmt.Printf("\n%s\n", successStyle.Render("  System update completed!"))
 	}
 }
 
 func runDotfilesUpdate() {
-	fmt.Println("\nUpdating dotfiles...")
+	fmt.Println()
+	fmt.Println(successStyle.Render("  Updating dotfiles..."))
+	fmt.Println()
 
 	dotfiles := os.Getenv("HOME") + "/dotfiles"
-	cmd := exec.Command(dotfiles+"/update.sh")
+	cmd := exec.Command(dotfiles + "/update.sh")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error updating dotfiles: %v\n", err)
+		fmt.Printf("\n%s\n", messageStyle.Render("  Error updating dotfiles: "+err.Error()))
 	} else {
-		fmt.Println("\nDotfiles update completed successfully!")
+		fmt.Printf("\n%s\n", successStyle.Render("  Dotfiles update completed!"))
 	}
 }
