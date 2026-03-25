@@ -4,17 +4,30 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
+type step int
+
+const (
+	stepSystemUpdate step = iota
+	stepDotfilesUpdate
+	stepDone
+)
+
 type model struct {
-	quitting  bool
-	message   string
-	spinner   spinner.Model
-	runUpdate bool // Flag to indicate whether to run the update
+	quitting       bool
+	message        string
+	spinner        spinner.Model
+	currentStep    step
+	runUpdate      bool
+	runDotfiles    bool
+	dotfilesAvail  bool
+	dotfilesChanges string
 }
 
 var (
@@ -30,13 +43,49 @@ var (
 
 	messageStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF5555"))
+
+	infoStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#AAAAAA"))
 )
+
+func checkDotfilesUpdates() (bool, string) {
+	dotfiles := os.Getenv("HOME") + "/dotfiles"
+
+	fetch := exec.Command("git", "-C", dotfiles, "fetch", "origin", "main")
+	fetch.Stderr = nil
+	fetch.Stdout = nil
+	if err := fetch.Run(); err != nil {
+		return false, ""
+	}
+
+	local, err := exec.Command("git", "-C", dotfiles, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return false, ""
+	}
+	remote, err := exec.Command("git", "-C", dotfiles, "rev-parse", "origin/main").Output()
+	if err != nil {
+		return false, ""
+	}
+
+	if strings.TrimSpace(string(local)) == strings.TrimSpace(string(remote)) {
+		return false, ""
+	}
+
+	changes, _ := exec.Command("git", "-C", dotfiles, "log", "--oneline", "HEAD..origin/main").Output()
+	return true, strings.TrimSpace(string(changes))
+}
 
 func initialModel() model {
 	sp := spinner.New()
 	sp.Spinner = spinner.Line
+
+	avail, changes := checkDotfilesUpdates()
+
 	return model{
-		spinner: sp,
+		spinner:         sp,
+		currentStep:     stepSystemUpdate,
+		dotfilesAvail:   avail,
+		dotfilesChanges: changes,
 	}
 }
 
@@ -51,26 +100,48 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "y", "Y":
-			m.quitting = true
-			m.runUpdate = true // Set flag to true to run the update
-			m.message = "Running system update...\n"
-			return m, tea.Quit // Stop the TUI before executing the command
+			if m.currentStep == stepSystemUpdate {
+				m.runUpdate = true
+				if m.dotfilesAvail {
+					m.currentStep = stepDotfilesUpdate
+				} else {
+					m.quitting = true
+					m.message = "Running system update...\n"
+					return m, tea.Quit
+				}
+			} else if m.currentStep == stepDotfilesUpdate {
+				m.runDotfiles = true
+				m.quitting = true
+				m.message = "Running system update + dotfiles update...\n"
+				return m, tea.Quit
+			}
 
 		case "n", "N":
-			m.message = "Update skipped.\n"
-			m.quitting = true
-			m.runUpdate = false // Set flag to false to skip the update
-			return m, tea.Quit  // Exit TUI
+			if m.currentStep == stepSystemUpdate {
+				if m.dotfilesAvail {
+					m.currentStep = stepDotfilesUpdate
+				} else {
+					m.message = "Updates skipped.\n"
+					m.quitting = true
+					return m, tea.Quit
+				}
+			} else if m.currentStep == stepDotfilesUpdate {
+				m.quitting = true
+				if m.runUpdate {
+					m.message = "Running system update...\n"
+				} else {
+					m.message = "Updates skipped.\n"
+				}
+				return m, tea.Quit
+			}
 
 		case "ctrl+c", "q":
 			m.message = "Exiting...\n"
 			m.quitting = true
-			m.runUpdate = false // Set flag to false
-			return m, tea.Quit  // Exit TUI
+			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
-		// Handle resizing if needed
 
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -85,14 +156,27 @@ func (m model) View() string {
 	}
 
 	header := titleStyle.Render("🔄 System Update Utility")
-	question := questionStyle.Render("Would you like to update the system? (y/n)\n")
+
+	var question string
+	var extra string
+
+	switch m.currentStep {
+	case stepSystemUpdate:
+		question = questionStyle.Render("Would you like to update the system? (y/n)\n")
+	case stepDotfilesUpdate:
+		question = questionStyle.Render("Dotfiles updates available. Apply? (y/n)\n")
+		extra = infoStyle.Render(m.dotfilesChanges)
+	}
+
 	loading := m.spinner.View()
 
+	if extra != "" {
+		return fmt.Sprintf("%s\n\n%s\n%s\n\n%s", header, question, extra, loading)
+	}
 	return fmt.Sprintf("%s\n\n%s\n\n%s", header, question, loading)
 }
 
 func main() {
-	// Run the TUI program
 	m := initialModel()
 	p := tea.NewProgram(m)
 
@@ -102,48 +186,52 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TUI has exited; check if we should run the update
-	if finalModel.(model).runUpdate {
-		runCommand()
-	} else {
+	fm := finalModel.(model)
+
+	if fm.runUpdate {
+		runSystemUpdate()
+	}
+
+	if fm.runDotfiles {
+		runDotfilesUpdate()
+	}
+
+	if !fm.runUpdate && !fm.runDotfiles {
 		fmt.Println("No updates were performed.")
 	}
+
+	fmt.Println("\nPress Enter to exit...")
+	fmt.Scanln()
+	os.Exit(0)
 }
 
-// runCommand executes the external `yay` command in a clean terminal
-func runCommand() {
+func runSystemUpdate() {
 	fmt.Println("Starting the system update...")
 
-	// Run the `yay` command
 	cmd := exec.Command("yay", "-Syu")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	// Execute the command and handle errors
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Error updating system: %v\n", err)
 	} else {
 		fmt.Println("\nSystem update completed successfully!")
 	}
+}
 
-	// Wait for the user to acknowledge before exiting
-	fmt.Println("\nPress Enter to exit...")
-	fmt.Scanln()
-	// Attempt to quit the terminal
-	fmt.Println("\nClosing terminal...")
+func runDotfilesUpdate() {
+	fmt.Println("\nUpdating dotfiles...")
 
-	// Send a command to quit the terminal
-	exitCmd := exec.Command("sh", "-c", "exit")
-	exitCmd.Stdout = os.Stdout
-	exitCmd.Stderr = os.Stderr
+	dotfiles := os.Getenv("HOME") + "/dotfiles"
+	cmd := exec.Command(dotfiles+"/update.sh")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
-	if err := exitCmd.Run(); err != nil {
-		fmt.Printf("Error closing terminal: %v\n", err)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error updating dotfiles: %v\n", err)
 	} else {
-		fmt.Println("Terminal closed.")
+		fmt.Println("\nDotfiles update completed successfully!")
 	}
-
-	// Use os.Exit to ensure the program itself exits
-	os.Exit(0)
 }
