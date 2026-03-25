@@ -58,7 +58,7 @@ bluez
 bluez-utils
 bluetui
 
-# Development tools
+# Dev tools
 pyenv
 go
 rust
