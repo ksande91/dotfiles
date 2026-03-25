@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -19,6 +20,43 @@ const (
 	stepDone
 )
 
+// Pywal colors loaded at startup
+var walColors [16]string
+
+func loadWalColors() {
+	home := os.Getenv("HOME")
+	f, err := os.Open(home + "/.cache/wal/colors")
+	if err != nil {
+		// Fallback colors if pywal not available
+		walColors = [16]string{
+			"#1a1a2e", "#bf616a", "#a3be8c", "#ebcb8b",
+			"#5e81ac", "#b48ead", "#88c0d0", "#eceff4",
+			"#4c566a", "#bf616a", "#a3be8c", "#ebcb8b",
+			"#5e81ac", "#b48ead", "#88c0d0", "#eceff4",
+		}
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	i := 0
+	for scanner.Scan() && i < 16 {
+		walColors[i] = strings.TrimSpace(scanner.Text())
+		i++
+	}
+}
+
+// Color aliases from pywal
+func bg() lipgloss.Color      { return lipgloss.Color(walColors[0]) }
+func red() lipgloss.Color     { return lipgloss.Color(walColors[1]) }
+func green() lipgloss.Color   { return lipgloss.Color(walColors[2]) }
+func yellow() lipgloss.Color  { return lipgloss.Color(walColors[3]) }
+func blue() lipgloss.Color    { return lipgloss.Color(walColors[4]) }
+func magenta() lipgloss.Color { return lipgloss.Color(walColors[5]) }
+func cyan() lipgloss.Color    { return lipgloss.Color(walColors[6]) }
+func fg() lipgloss.Color      { return lipgloss.Color(walColors[7]) }
+func grey() lipgloss.Color    { return lipgloss.Color(walColors[8]) }
+
 type model struct {
 	quitting        bool
 	spinner         spinner.Model
@@ -29,63 +67,6 @@ type model struct {
 	dotfilesChanges string
 	width           int
 }
-
-var (
-	purple = lipgloss.Color("#B48EAD")
-	cyan   = lipgloss.Color("#88C0D0")
-	red    = lipgloss.Color("#BF616A")
-	green  = lipgloss.Color("#A3BE8C")
-	yellow = lipgloss.Color("#EBCB8B")
-	white  = lipgloss.Color("#ECEFF4")
-	grey   = lipgloss.Color("#4C566A")
-
-	logoStyle = lipgloss.NewStyle().
-			Foreground(purple).
-			Bold(true)
-
-	cardStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(grey).
-			Padding(1, 3)
-
-	questionStyle = lipgloss.NewStyle().
-			Foreground(white).
-			Bold(true)
-
-	keyStyle = lipgloss.NewStyle().
-			Foreground(purple).
-			Bold(true)
-
-	hintStyle = lipgloss.NewStyle().
-			Foreground(white)
-
-	dimStyle = lipgloss.NewStyle().
-			Foreground(grey)
-
-	changeStyle = lipgloss.NewStyle().
-			Foreground(yellow).
-			PaddingLeft(2)
-
-	descStyle = lipgloss.NewStyle().
-			Foreground(cyan)
-
-	successStyle = lipgloss.NewStyle().
-			Foreground(green).
-			Bold(true)
-
-	messageStyle = lipgloss.NewStyle().
-			Foreground(red)
-
-	activeStep = lipgloss.NewStyle().
-			Foreground(cyan).
-			Bold(true)
-
-	doneStep = lipgloss.NewStyle().
-			Foreground(green)
-
-	inactiveStep = lipgloss.NewStyle().
-			Foreground(grey)
-)
 
 func checkDotfilesUpdates() (bool, string) {
 	dotfiles := os.Getenv("HOME") + "/dotfiles"
@@ -117,7 +98,7 @@ func checkDotfilesUpdates() (bool, string) {
 func initialModel() model {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
-	sp.Style = lipgloss.NewStyle().Foreground(purple)
+	sp.Style = lipgloss.NewStyle().Foreground(magenta())
 
 	avail, changes := checkDotfilesUpdates()
 
@@ -183,19 +164,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func renderSteps(current step, dotfilesAvail bool) string {
-	sys := inactiveStep.Render("○ System")
-	dot := inactiveStep.Render("○ Dotfiles")
+	sys := lipgloss.NewStyle().Foreground(grey()).Render("○ System")
+	dot := lipgloss.NewStyle().Foreground(grey()).Render("○ Dotfiles")
 
 	if current == stepSystemUpdate {
-		sys = activeStep.Render("● System")
+		sys = lipgloss.NewStyle().Foreground(cyan()).Bold(true).Render("● System")
 	} else if current == stepDotfilesUpdate {
-		sys = doneStep.Render("✓ System")
-		dot = activeStep.Render("● Dotfiles")
+		sys = lipgloss.NewStyle().Foreground(green()).Render("✓ System")
+		dot = lipgloss.NewStyle().Foreground(cyan()).Bold(true).Render("● Dotfiles")
 	}
 
 	steps := "  " + sys
 	if dotfilesAvail {
-		steps += dimStyle.Render("  ─  ") + dot
+		steps += lipgloss.NewStyle().Foreground(grey()).Render("  ─  ") + dot
 	}
 	return steps
 }
@@ -204,56 +185,66 @@ func (m model) View() string {
 	if m.quitting {
 		var lines []string
 		if m.runUpdate {
-			lines = append(lines, successStyle.Render("  ✓ System update"))
+			lines = append(lines, lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  ✓ System update"))
 		}
 		if m.runDotfiles {
-			lines = append(lines, successStyle.Render("  ✓ Dotfiles update"))
+			lines = append(lines, lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  ✓ Dotfiles update"))
 		}
 		if len(lines) == 0 {
-			return "\n" + dimStyle.Render("  No updates selected.") + "\n"
+			return "\n" + lipgloss.NewStyle().Foreground(grey()).Render("  No updates selected.") + "\n"
 		}
 		return "\n" + strings.Join(lines, "\n") + "\n"
 	}
 
-	logo := logoStyle.Render(
+	logo := lipgloss.NewStyle().Foreground(magenta()).Bold(true).Render(
 		"  ┌─────────────────────┐\n" +
 			"  │  System  Manager    │\n" +
 			"  └─────────────────────┘")
 
 	steps := renderSteps(m.currentStep, m.dotfilesAvail)
-	spinner := m.spinner.View()
+	spin := m.spinner.View()
+
+	cardBorder := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(blue()).
+		Padding(1, 3)
+
+	keys := lipgloss.NewStyle().Foreground(magenta()).Bold(true).Render("Y") +
+		lipgloss.NewStyle().Foreground(fg()).Render(" yes  ") +
+		lipgloss.NewStyle().Foreground(magenta()).Bold(true).Render("N") +
+		lipgloss.NewStyle().Foreground(fg()).Render(" no  ") +
+		lipgloss.NewStyle().Foreground(magenta()).Bold(true).Render("Q") +
+		lipgloss.NewStyle().Foreground(fg()).Render(" quit")
 
 	var content string
 
-	keys := keyStyle.Render("Y") + hintStyle.Render(" yes  ") +
-		keyStyle.Render("N") + hintStyle.Render(" no  ") +
-		keyStyle.Render("Q") + hintStyle.Render(" quit")
-
 	switch m.currentStep {
 	case stepSystemUpdate:
-		content = questionStyle.Render("Update system packages?") + "\n\n" +
-			descStyle.Render("  Runs yay -Syu to update all packages") + "\n\n" +
+		content = lipgloss.NewStyle().Foreground(fg()).Bold(true).Render("Update system packages?") + "\n\n" +
+			lipgloss.NewStyle().Foreground(cyan()).Render("  Runs yay -Syu to update all packages") + "\n\n" +
 			keys
 
 	case stepDotfilesUpdate:
 		changeLines := strings.Split(m.dotfilesChanges, "\n")
 		var formatted []string
 		for _, line := range changeLines {
-			formatted = append(formatted, changeStyle.Render("› "+line))
+			formatted = append(formatted, lipgloss.NewStyle().Foreground(yellow()).PaddingLeft(2).Render("› "+line))
 		}
 
-		content = questionStyle.Render("Apply dotfiles updates?") + "\n\n" +
-			descStyle.Render("  New commits:") + "\n" +
+		content = lipgloss.NewStyle().Foreground(fg()).Bold(true).Render("Apply dotfiles updates?") + "\n\n" +
+			lipgloss.NewStyle().Foreground(cyan()).Render("  New commits:") + "\n" +
 			strings.Join(formatted, "\n") + "\n\n" +
 			keys
 	}
 
-	card := cardStyle.Render(content)
+	card := cardBorder.Render(content)
 
-	return fmt.Sprintf("\n%s\n\n%s  %s\n\n%s\n", logo, steps, spinner, card)
+	return fmt.Sprintf("\n%s\n\n%s  %s\n\n%s\n", logo, steps, spin, card)
 }
 
 func main() {
+	loadWalColors()
+
 	m := initialModel()
 	p := tea.NewProgram(m)
 
@@ -284,7 +275,7 @@ func main() {
 
 func runSystemUpdate() {
 	fmt.Println()
-	fmt.Println(successStyle.Render("  Starting system update..."))
+	fmt.Println(lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  Starting system update..."))
 	fmt.Println()
 
 	cmd := exec.Command("yay", "-Syu")
@@ -293,15 +284,15 @@ func runSystemUpdate() {
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("\n%s\n", messageStyle.Render("  Error: "+err.Error()))
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Foreground(red()).Render("  Error: "+err.Error()))
 	} else {
-		fmt.Printf("\n%s\n", successStyle.Render("  System update completed!"))
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  System update completed!"))
 	}
 }
 
 func runDotfilesUpdate() {
 	fmt.Println()
-	fmt.Println(successStyle.Render("  Updating dotfiles..."))
+	fmt.Println(lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  Updating dotfiles..."))
 	fmt.Println()
 
 	dotfiles := os.Getenv("HOME") + "/dotfiles"
@@ -311,8 +302,8 @@ func runDotfilesUpdate() {
 	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("\n%s\n", messageStyle.Render("  Error: "+err.Error()))
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Foreground(red()).Render("  Error: "+err.Error()))
 	} else {
-		fmt.Printf("\n%s\n", successStyle.Render("  Dotfiles update completed!"))
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Foreground(green()).Bold(true).Render("  Dotfiles update completed!"))
 	}
 }
