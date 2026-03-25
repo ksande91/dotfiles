@@ -32,13 +32,15 @@ install_packages() {
         papirus-icon-theme \
         pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
         networkmanager \
+        bluez bluez-utils bluetui \
         pyenv go rust \
         git base-devel stow
 
     # Enable audio services
     systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
-    # Enable network
+    # Enable network and bluetooth
     sudo systemctl enable --now NetworkManager 2>/dev/null || true
+    sudo systemctl enable --now bluetooth 2>/dev/null || true
 }
 
 # -----------------------------------------------------------------------------
