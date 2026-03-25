@@ -18,7 +18,7 @@ while true; do
 
     if [ "$LOCAL" != "$REMOTE" ]; then
         CHANGES=$(git log --oneline HEAD..origin/main 2>/dev/null | head -5)
-        notify-send -u normal "Dotfiles Update Available" "$CHANGES" \
+        notify-send -u critical "Dotfiles Update Available" "$CHANGES" \
             --action="update=Update Now"
 
         # If user clicks "Update Now"
