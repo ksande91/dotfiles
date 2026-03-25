@@ -51,3 +51,4 @@ bluetui
 pyenv
 go
 rust
+htop
