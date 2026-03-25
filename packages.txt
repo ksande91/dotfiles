@@ -2,6 +2,7 @@
 
 # Core desktop
 hyprland
+libnotify
 hyprlock
 xdg-desktop-portal-hyprland
 waybar
