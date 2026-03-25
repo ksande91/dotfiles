@@ -28,7 +28,7 @@ install_packages() {
         waybar dunst rofi-wayland kitty \
         swww grim slurp wl-clipboard brightnessctl \
         python-pywal starship \
-        ttf-fira-sans noto-fonts noto-fonts-emoji ttf-font-awesome otf-font-awesome \
+        ttf-fira-sans noto-fonts noto-fonts-emoji ttf-font-awesome otf-font-awesome ttf-nerd-fonts-symbols \
         papirus-icon-theme \
         pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol \
         networkmanager \
