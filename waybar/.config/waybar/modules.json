@@ -193,7 +193,7 @@
         "format-disabled": "",
         "format-off": "",
         "interval": 30,
-        "on-click": "kitty -e bluetui",
+        "on-click": "kitty --class Floating -e bluetui",
         "format-no-controller": ""
     },
 
