@@ -234,9 +234,11 @@ main() {
     info "  4. Start Hyprland:   Hyprland"
 }
 
-# Allow running individual steps: ./install.sh link_dotfiles
-if [ -n "$1" ]; then
-    "$1"
-else
-    main
+# Only run when executed directly, not when sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    if [ -n "$1" ]; then
+        "$1"
+    else
+        main
+    fi
 fi
