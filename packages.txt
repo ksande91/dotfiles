@@ -1,4 +1,5 @@
 # Base packages for Hyprland desktop setup
+# Managed via dotfiles repo — edit this file to add/remove packages
 
 # Core desktop
 hyprland
