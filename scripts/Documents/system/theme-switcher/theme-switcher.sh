@@ -3,7 +3,7 @@
 # Dependency checks
 command -v rofi >/dev/null 2>&1 || { echo "Error: rofi is not installed." >&2; exit 1; }
 command -v wal >/dev/null 2>&1 || { echo "Error: pywal is not installed." >&2; exit 1; }
-command -v swww >/dev/null 2>&1 || { echo "Error: swww is not installed." >&2; exit 1; }
+command -v awww >/dev/null 2>&1 || { echo "Error: awww is not installed." >&2; exit 1; }
 
 # Check if an argument (path to image directory) is provided
 if [ -z "$1" ]; then
@@ -53,10 +53,10 @@ for image in "${images[@]}"; do
   fi
 done
 
-# Apply the wallpaper using wal and swww
+# Apply the wallpaper using wal and awww
 if [ -n "$selected_image" ]; then
   wal -n -i "$selected_image"
-  swww img "$(< "${HOME}/.cache/wal/wal")"
+  awww img "$(< "${HOME}/.cache/wal/wal")"
 
   # Get the path from wal cache (where the final wallpaper path is stored)
   wallpaper_path="$(< "${HOME}/.cache/wal/wal")"
