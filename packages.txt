@@ -41,7 +41,7 @@ otf-font-awesome
 ttf-nerd-fonts-symbols
 papirus-icon-theme
 
-# Audio
+# Audio stack
 pipewire
 pipewire-pulse
 pipewire-alsa
