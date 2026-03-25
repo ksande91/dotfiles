@@ -13,6 +13,7 @@ python-pywal
 
 # Apps
 firefox
+spotify-launcher
 
 # Utilities
 grim
