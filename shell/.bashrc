@@ -53,3 +53,11 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 export PATH=$HOME/.local/bin:$PATH
 export PATH="$HOME/.cargo/bin:$PATH"
+
+# Install packages and track them in dotfiles
+pkg() {
+    yay -S "$@" && for p in "$@"; do
+        [[ "$p" == -* ]] && continue
+        grep -qx "$p" ~/dotfiles/packages.txt 2>/dev/null || echo "$p" >> ~/dotfiles/packages.txt
+    done
+}

@@ -25,7 +25,11 @@ install_packages() {
     # Read package list, ignoring comments and blank lines
     local pkgs
     pkgs=$(grep -v '^#\|^$' "$DOTFILES/packages.txt")
-    sudo pacman -S --needed --noconfirm $pkgs
+    if command -v yay &>/dev/null; then
+        yay -S --needed --noconfirm $pkgs
+    else
+        sudo pacman -S --needed --noconfirm $pkgs
+    fi
 
     # Enable audio services
     systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
