@@ -47,8 +47,8 @@ fi
 # Reload services
 info "Reloading services..."
 hyprctl reload 2>&1 || warn "Hyprland not running"
-killall waybar 2>/dev/null; waybar &>/dev/null &
-killall dunst 2>/dev/null; dunst &>/dev/null &
+killall waybar 2>/dev/null; setsid waybar &>/dev/null &
+killall dunst 2>/dev/null; setsid dunst &>/dev/null &
 
 # Regenerate pywal
 if command -v wal &>/dev/null; then
