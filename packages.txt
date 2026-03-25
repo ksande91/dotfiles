@@ -1,3 +1,5 @@
+# Base packages for Hyprland desktop setup
+
 # Core desktop
 hyprland
 hyprlock
