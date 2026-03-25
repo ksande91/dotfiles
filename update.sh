@@ -23,12 +23,10 @@ fi
 
 echo "$changed_files" | sed 's/^/  /'
 
-# Install packages if install.sh changed
-if echo "$changed_files" | grep -q "^install.sh$"; then
-    info "Install script changed — syncing packages..."
-    source "$DOTFILES/install.sh"
-    install_packages
-fi
+# Always sync packages (--needed skips already installed)
+info "Syncing packages..."
+source "$DOTFILES/install.sh"
+install_packages
 
 # Re-stow everything
 info "Re-linking dotfiles..."
