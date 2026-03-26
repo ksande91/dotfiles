@@ -29,6 +29,7 @@ install_packages || { error "Package install failed — check $LOGFILE"; }
 info "Re-linking dotfiles..."
 packages=(hypr waybar rofi dunst kitty wal tmux shell scripts)
 for pkg in "${packages[@]}"; do
+    stow -d "$DOTFILES" -t "$HOME" --restow "$pkg" 2>&1 || \
     stow -d "$DOTFILES" -t "$HOME" --adopt "$pkg" 2>&1 || true
     git -C "$DOTFILES" checkout -- "$pkg" 2>/dev/null || true
     info "  Stowed $pkg"
@@ -53,6 +54,12 @@ killall dunst 2>/dev/null; setsid dunst &>/dev/null &
 # Regenerate pywal
 if command -v wal &>/dev/null; then
     wal -R 2>&1 || warn "No previous pywal theme to restore"
+fi
+
+# Install TPM if missing
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+    info "Installing Tmux Plugin Manager..."
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm 2>&1
 fi
 
 # Rebuild Go tools if present
