@@ -10,7 +10,7 @@
 
 @import "~/.cache/wal/colors-rofi.rasi"
 
-* { border-width: 1px; }
+* { border-width: 2px; }
 
 /* ---- Configuration ---- */
 configuration {
@@ -39,6 +39,8 @@ window {
     spacing:                      0px;
     padding:                      0px;
     margin:                       0px;
+    border:                       2px;
+    border-color:                 @color1;
     border-radius:                10px;
     cursor:                       "default";
     transparency:                 "real";
@@ -159,6 +161,7 @@ element {
     background-color:             @background;
     border-radius:                10px;
     border:                       @border-width;
+    border-color:                 @color1;
 }
 
 element normal.normal {
