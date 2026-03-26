@@ -100,7 +100,7 @@ setup_node() {
 link_dotfiles() {
     info "Linking dotfiles with GNU Stow..."
 
-    local packages=(hypr waybar rofi dunst kitty wal shell scripts)
+    local packages=(hypr waybar rofi dunst kitty wal tmux shell scripts)
     for pkg in "${packages[@]}"; do
         info "  Stowing $pkg..."
         # Remove conflicting default files, then stow
@@ -113,7 +113,19 @@ link_dotfiles() {
 }
 
 # -----------------------------------------------------------------------------
-# 7. Build Go tools
+# 7. Tmux Plugin Manager
+# -----------------------------------------------------------------------------
+setup_tpm() {
+    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+        info "Installing Tmux Plugin Manager..."
+        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    else
+        info "TPM already installed"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# 8. Build Go tools
 # -----------------------------------------------------------------------------
 build_go_tools() {
     info "Building Go tools..."
@@ -211,6 +223,7 @@ main() {
     setup_python
     setup_node
     link_dotfiles
+    setup_tpm
     build_go_tools
     setup_wallpaper_ai
     setup_secrets

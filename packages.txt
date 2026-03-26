@@ -58,6 +58,9 @@ bluez
 bluez-utils
 bluetui
 
+# Terminal
+tmux
+
 # Dev tools
 pyenv
 go
