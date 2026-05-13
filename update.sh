@@ -16,6 +16,14 @@ exec > >(tee -a "$LOGFILE") 2>&1
 echo ""
 echo "=== Update started: $(date) ==="
 
+# Refuse to run with uncommitted changes — the stow loop below resets
+# tracked files via `git checkout`, which would silently discard edits.
+if ! git -C "$DOTFILES" diff --quiet || ! git -C "$DOTFILES" diff --cached --quiet; then
+    error "Uncommitted changes in $DOTFILES — commit or stash before running update.sh"
+    git -C "$DOTFILES" status --short
+    exit 1
+fi
+
 # Pull latest
 info "Pulling latest changes..."
 cd "$DOTFILES" && git pull origin main || { error "Git pull failed"; exit 1; }
