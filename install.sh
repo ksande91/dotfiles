@@ -143,7 +143,7 @@ build_go_tools() {
 # 8. Install wallpaper-ai (if repo is present)
 # -----------------------------------------------------------------------------
 setup_wallpaper_ai() {
-    local repo="$HOME/Documents/personal/wallpaper-ai"
+    local repo="$HOME/personal/wallpaper-ai"
     if [ -d "$repo" ]; then
         info "Installing wallpaper-ai..."
         pip install -e "$repo"

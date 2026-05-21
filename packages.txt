@@ -63,6 +63,9 @@ tmux
 
 # Editor
 neovim
+ripgrep
+fd
+lazygit
 
 # Dev tools
 pyenv
