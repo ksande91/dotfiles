@@ -35,13 +35,13 @@ Each directory is a GNU Stow package that symlinks into `$HOME`:
 | `nvim/` | `~/.config/nvim/` | LazyVim config + pywal-driven colorscheme (lushwal) |
 | `wal/` | `~/.config/wal/templates/` | Pywal templates for Hyprland + Waybar colors |
 | `shell/` | `~/` | `.bashrc`, `.bash_profile` |
-| `scripts/` | `~/Documents/system/` | Theme-switcher, update-prompt |
+| `scripts/` | `~/Documents/system/` | update-prompt |
 
 ## Theming
 
 Colors are generated dynamically from the current wallpaper using **pywal**:
 
-1. Pick a wallpaper via `Super+T` (rofi image picker) or `Super+W` (wallpaper-ai)
+1. Pick or generate a wallpaper via `Super+W` (wallpaper-ai)
 2. Pywal extracts a color palette and writes it to `~/.cache/wal/`
 3. Templates in `wal/.config/wal/templates/` generate:
    - `colors-hyprland.conf` — border colors (`$color0`–`$color15`)
@@ -56,7 +56,6 @@ Colors are generated dynamically from the current wallpaper using **pywal**:
 | `Super+R` | App launcher (rofi) |
 | `Super+B` | Browser (firefox) |
 | `Super+E` | File manager |
-| `Super+T` | Theme switcher (rofi wallpaper picker) |
 | `Super+W` | wallpaper-ai (AI wallpaper generator) |
 | `Super+Shift+W` | Random AI wallpaper from learned preferences |
 | `Super+F1–F5` | Rate current wallpaper (1–5) |
@@ -67,14 +66,11 @@ Colors are generated dynamically from the current wallpaper using **pywal**:
 
 ## Custom Tools
 
-### theme-switcher
-Bash script that uses rofi to browse wallpapers with thumbnails, applies the selection via pywal + swww, and updates hyprlock.
-
 ### update-prompt
 Go TUI (Bubble Tea) that prompts for system updates (`yay -Syu`) on login. Launched automatically on startup in a floating kitty window.
 
 ### wallpaper-ai
-Separate Python project ([repo](~/Documents/personal/wallpaper-ai)) — generates wallpapers with AI, learns preferences from ratings. Requires `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `FAL_KEY`.
+Separate Python project ([repo](~/personal/wallpaper-ai)) — generates wallpapers with AI, learns preferences from ratings. Requires `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `FAL_KEY`.
 
 ## Post-Install
 
@@ -87,7 +83,7 @@ Separate Python project ([repo](~/Documents/personal/wallpaper-ai)) — generate
    vim ~/.config/hypr/conf/monitors.conf
    # Use 'hyprctl monitors' to see detected outputs
    ```
-3. **Wallpapers** — add images to `~/Pictures/wallpaper/`, then pick one with `Super+T`
+3. **Wallpapers** — add images to `~/Pictures/wallpaper/` for the initial pywal theme, or generate one with `Super+W` (wallpaper-ai)
 
 ## License
 
