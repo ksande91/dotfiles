@@ -61,6 +61,9 @@ bluetui
 # Terminal
 tmux
 
+# Editor
+neovim
+
 # Dev tools
 pyenv
 go

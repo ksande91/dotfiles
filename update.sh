@@ -35,7 +35,7 @@ install_packages || { error "Package install failed — check $LOGFILE"; }
 
 # Stow all packages
 info "Re-linking dotfiles..."
-packages=(hypr waybar rofi dunst kitty wal tmux shell scripts)
+packages=(hypr waybar rofi dunst kitty wal nvim tmux shell scripts)
 for pkg in "${packages[@]}"; do
     stow -d "$DOTFILES" -t "$HOME" --restow "$pkg" 2>&1 || \
     stow -d "$DOTFILES" -t "$HOME" --adopt "$pkg" 2>&1 || true

@@ -32,6 +32,7 @@ Each directory is a GNU Stow package that symlinks into `$HOME`:
 | `rofi/` | `~/.config/rofi/` | Application launcher config |
 | `dunst/` | `~/.config/dunst/` | Notification daemon config |
 | `kitty/` | `~/.config/kitty/` | Terminal emulator + DesertNight theme |
+| `nvim/` | `~/.config/nvim/` | LazyVim config + pywal-driven colorscheme (lushwal) |
 | `wal/` | `~/.config/wal/templates/` | Pywal templates for Hyprland + Waybar colors |
 | `shell/` | `~/` | `.bashrc`, `.bash_profile` |
 | `scripts/` | `~/Documents/system/` | Theme-switcher, update-prompt |
