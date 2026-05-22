@@ -150,6 +150,16 @@ setup_wallpaper_ai() {
     else
         warn "wallpaper-ai repo not found at $repo — clone it manually if needed"
     fi
+
+    # Seed the hyprlock background var so hyprlock.conf's `source =` works
+    # before wallpaper-ai has run for the first time.
+    local bg_conf="$HOME/.cache/wallpaper-ai/hyprlock-bg.conf"
+    if [ ! -f "$bg_conf" ]; then
+        mkdir -p "$(dirname "$bg_conf")"
+        # "screenshot" is a valid hyprlock path; used until wallpaper-ai runs.
+        echo '$wallpaper = screenshot' > "$bg_conf"
+        info "Seeded $bg_conf"
+    fi
 }
 
 # -----------------------------------------------------------------------------
