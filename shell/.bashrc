@@ -53,6 +53,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 export PATH=$HOME/.local/bin:$PATH
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/share/supabase:$PATH"
 
 # work-nav: type 'work' to jump to a project
 source "/home/krisn/personal/work-nav/work.sh"
