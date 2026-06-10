@@ -100,7 +100,7 @@ setup_node() {
 link_dotfiles() {
     info "Linking dotfiles with GNU Stow..."
 
-    local packages=(hypr waybar rofi dunst kitty wal nvim tmux shell scripts)
+    local packages=(hypr waybar rofi dunst kitty wal nvim tmux shell scripts cc-monitor)
     for pkg in "${packages[@]}"; do
         info "  Stowing $pkg..."
         # Remove conflicting default files, then stow

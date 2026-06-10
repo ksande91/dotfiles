@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# cc-hook — Claude Code hook that records per-session state for the cc-monitor
+# Waybar badge and picker. Invoked as: cc-hook <working|waiting|end>
+#
+# Reads Claude Code's JSON hook payload on stdin, resolves which Hyprland
+# window the session runs in, and writes a small state file that cc-count and
+# cc-picker read. No daemon, no terminal scraping.
+set -uo pipefail
+
+action="${1:-}"
+case "$action" in
+    working|waiting|end) ;;
+    *) echo "usage: cc-hook <working|waiting|end>" >&2; exit 2 ;;
+esac
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cc-monitor"
+mkdir -p "$cache_dir"
+
+signal_waybar() { pkill -RTMIN+8 waybar 2>/dev/null || true; }
+
+# Claude Code pipes the hook payload as JSON on stdin.
+payload="$(cat)"
+session_id="$(printf '%s' "$payload" | jq -r '.session_id // empty')"
+cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty')"
+
+# Without a session id we cannot key the state file; nothing to do.
+[ -n "$session_id" ] || exit 0
+
+state_file="$cache_dir/$session_id.json"
+
+if [ "$action" = "end" ]; then
+    rm -f "$state_file"
+    signal_waybar
+    exit 0
+fi
+
+# Walk UP the process tree starting from our own PID. At each step, ask whether
+# that PID is a window's client pid in hyprctl. The first hit is the terminal
+# window the Claude Code session lives in. On the way we also pass through the
+# claude process itself — record its PID so cc-count/cc-picker can prune the
+# session by process liveness (window addresses are heap pointers and can be
+# reused by new windows, so address liveness alone is not trustworthy).
+clients="$(hyprctl clients -j 2>/dev/null || echo '[]')"
+
+window=""
+claude_pid=""
+resolve() {
+    local pid="$$" addr="" stat rest comm
+    while [ -n "$pid" ] && [ "$pid" -gt 1 ] 2>/dev/null; do
+        comm="$(cat "/proc/$pid/comm" 2>/dev/null)"
+        [ "$comm" = "claude" ] && [ -z "$claude_pid" ] && claude_pid="$pid"
+        addr="$(printf '%s' "$clients" | jq -r --argjson p "$pid" \
+            'first(.[] | select(.pid == $p) | .address) // empty')"
+        [ -n "$addr" ] && { window="$addr"; return 0; }
+        # Parent pid is field 4 of /proc/<pid>/stat. Field 2 (comm) is wrapped
+        # in parens and may itself contain ")", so split after the LAST ") ".
+        stat="$(cat "/proc/$pid/stat" 2>/dev/null)" || return 1
+        rest="${stat##*) }"                  # "<state> <ppid> <pgrp> ..."
+        pid="$(printf '%s' "$rest" | cut -d' ' -f2)"
+    done
+    return 1
+}
+resolve || true
+
+# If we couldn't resolve a live window (e.g. a Stop firing oddly), reuse what's
+# already on record so the session keeps its window/pid.
+if [ -f "$state_file" ]; then
+    [ -n "$window" ] || window="$(jq -r '.window // empty' "$state_file" 2>/dev/null || true)"
+    [ -n "$claude_pid" ] || claude_pid="$(jq -r '.pid // empty' "$state_file" 2>/dev/null || true)"
+fi
+
+label="$(basename "${cwd:-$PWD}")"
+ts="$(date +%s)"
+
+jq -n \
+    --arg state   "$action" \
+    --arg window  "$window" \
+    --arg label   "$label" \
+    --arg cwd     "${cwd:-$PWD}" \
+    --arg session "$session_id" \
+    --arg pid     "$claude_pid" \
+    --argjson ts  "$ts" \
+    '{state:$state, window:$window, label:$label, cwd:$cwd, session:$session,
+      pid:($pid|tonumber? // null), ts:$ts}' \
+    > "$state_file"
+
+signal_waybar

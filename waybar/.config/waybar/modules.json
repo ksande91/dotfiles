@@ -37,6 +37,17 @@
         "separate-outputs": true
     },
 
+    // Claude Code session monitor (cc-monitor)
+    "custom/claude": {
+        "exec": "$HOME/.local/bin/cc-count",
+        "return-type": "json",
+        "interval": 5,
+        "signal": 8,
+        "on-click": "$HOME/.local/bin/cc-picker",
+        "tooltip": true,
+        "format": "󰚩 {}"
+    },
+
     // Rofi Application Launcher
     "custom/appmenu": {
         "format": "Apps",

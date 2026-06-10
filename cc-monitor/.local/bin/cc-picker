@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# cc-picker — list the Claude Code sessions that need attention (state
+# "waiting") in a rofi menu and focus the chosen session's Hyprland window.
+# Rows are rendered in the same amber "attention" colour as the Waybar badge
+# (rofi rows can't animate, so this is the steady equivalent of the pulse).
+# Working sessions are not listed. While iterating, dead sessions are pruned.
+# The window address is carried out-of-band (by menu index), never shown.
+set -uo pipefail
+
+# Matches #custom-claude.attention in the Waybar style.
+ATTENTION="#f0a500"
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cc-monitor"
+[ -d "$cache_dir" ] || exit 0
+
+# Bash 5.2+ treats "&" in a ${//} replacement as the matched text; turn that off
+# so the entity replacements below insert a literal "&". No-op on older bash.
+shopt -u patsub_replacement 2>/dev/null || true
+
+# Escape text for rofi's Pango markup (-markup-rows). & must come first.
+pango_escape() {
+    local s="$1"
+    s="${s//&/&amp;}"; s="${s//</&lt;}"; s="${s//>/&gt;}"
+    printf '%s' "$s"
+}
+
+shopt -s nullglob
+files=("$cache_dir"/*.json)
+(( ${#files[@]} )) || exit 0
+
+# Live window addresses, for pruning dead sessions as we build the menu.
+if clients_json="$(hyprctl clients -j 2>/dev/null)"; then
+    live="$(printf '%s' "$clients_json" | jq -r '.[].address' 2>/dev/null)"
+    can_prune=1
+else
+    live=""; can_prune=0
+fi
+
+# Build parallel arrays: visible lines and their hidden window addresses.
+displays=(); addrs=()
+for f in "${files[@]}"; do
+    state="$(jq -r '.state // empty' "$f" 2>/dev/null)" || continue
+    [ -n "$state" ] || { rm -f "$f"; continue; }
+    window="$(jq -r '.window // empty' "$f" 2>/dev/null)"
+    label="$(jq -r '.label // empty' "$f" 2>/dev/null)"
+    cwd="$(jq -r '.cwd // empty' "$f" 2>/dev/null)"
+    pid="$(jq -r '.pid // empty' "$f" 2>/dev/null)"
+    # Prune dead sessions. The claude PID is authoritative when recorded:
+    # window addresses are heap pointers Hyprland can hand to a new window, so
+    # a stale session can point at a live-but-unrelated address forever.
+    if [ -n "$pid" ]; then
+        [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "claude" ] || { rm -f "$f"; continue; }
+    elif [ "$can_prune" = 1 ] && [ -n "$window" ] && ! grep -qxF "$window" <<<"$live"; then
+        rm -f "$f"; continue
+    fi
+    [ "$state" = "waiting" ] || continue   # only sessions needing attention
+    [ -n "$window" ] || continue           # can't focus a window we never resolved
+    displays+=("<span foreground='$ATTENTION' weight='bold'>● $(pango_escape "$label")  —  $(pango_escape "$cwd")</span>")
+    addrs+=("$window")
+done
+
+(( ${#displays[@]} )) || exit 0
+
+# -format i makes rofi return the selected line's index, so duplicate labels
+# never collide and the address stays out of the visible text.
+# -markup-rows renders the Pango span that colours waiting rows amber.
+idx="$(printf '%s\n' "${displays[@]}" | rofi -dmenu -i -p "Claude" -markup-rows -format i)"
+[ -n "$idx" ] || exit 0
+
+addr="${addrs[$idx]:-}"
+[ -n "$addr" ] || exit 0
+hyprctl dispatch focuswindow "address:$addr"

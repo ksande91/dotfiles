@@ -192,6 +192,40 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
+ * Claude Code monitor (cc-monitor)
+ * ----------------------------------------------------- */
+
+#custom-claude {
+    font-size: 16px;
+    border-radius: 15px;
+    margin: 10px 10px 10px 0px;
+    padding: 4px 12px 2px 12px;
+}
+
+#custom-claude.idle {
+    background-color: @backgroundlight;
+    color: @textcolor2;
+}
+
+#custom-claude.attention {
+    background-color: #f0a500;
+    color: #1a1a1a;
+    font-weight: bold;
+    animation-name: ccblink;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes ccblink {
+    to {
+        background-color: @backgroundlight;
+        color: @textcolor1;
+    }
+}
+
+/* -----------------------------------------------------
  * Custom Exit
  * ----------------------------------------------------- */
 

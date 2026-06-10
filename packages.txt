@@ -28,6 +28,7 @@ wl-clipboard
 brightnessctl
 starship
 stow
+jq                   # required by cc-monitor (cc-hook / cc-count / cc-picker)
 git
 base-devel
 htop

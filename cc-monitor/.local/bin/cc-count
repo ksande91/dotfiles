@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# cc-count — Waybar custom-module exec. Prints JSON {text, tooltip, class}.
+#   text  = number of Claude Code sessions in state "waiting" ("" when none)
+#   class = "attention" when any session is waiting, else "idle"
+#   tooltip lists the waiting sessions' labels
+# Also prunes state files whose window has vanished from Hyprland.
+set -uo pipefail
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cc-monitor"
+
+emit() { # text class tooltip
+    jq -cn --arg t "$1" --arg c "$2" --arg tt "$3" \
+        '{text:$t, class:$c, tooltip:$tt}'
+}
+
+[ -d "$cache_dir" ] || { emit "" "idle" "No Claude Code sessions"; exit 0; }
+
+shopt -s nullglob
+files=("$cache_dir"/*.json)
+(( ${#files[@]} )) || { emit "" "idle" "No Claude Code sessions"; exit 0; }
+
+# Live window addresses, for pruning. Only prune when hyprctl actually answered
+# — otherwise a transient failure would wipe every session's state file.
+if clients_json="$(hyprctl clients -j 2>/dev/null)"; then
+    live="$(printf '%s' "$clients_json" | jq -r '.[].address' 2>/dev/null)"
+    can_prune=1
+else
+    live=""; can_prune=0
+fi
+
+waiting=0
+tooltip="Waiting for input:"
+for f in "${files[@]}"; do
+    state="$(jq -r '.state // empty' "$f" 2>/dev/null)" || { rm -f "$f"; continue; }
+    [ -n "$state" ] || { rm -f "$f"; continue; }
+    window="$(jq -r '.window // empty' "$f" 2>/dev/null)"
+    label="$(jq -r '.label // empty' "$f" 2>/dev/null)"
+    pid="$(jq -r '.pid // empty' "$f" 2>/dev/null)"
+    # Prune dead sessions. The claude PID is authoritative when recorded:
+    # window addresses are heap pointers Hyprland can hand to a new window, so
+    # a stale session can point at a live-but-unrelated address forever.
+    if [ -n "$pid" ]; then
+        [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "claude" ] || { rm -f "$f"; continue; }
+    elif [ "$can_prune" = 1 ] && [ -n "$window" ] && ! grep -qxF "$window" <<<"$live"; then
+        rm -f "$f"
+        continue
+    fi
+    if [ "$state" = "waiting" ]; then
+        waiting=$((waiting + 1))
+        tooltip+=$'\n'"● $label"
+    fi
+done
+
+if (( waiting > 0 )); then
+    emit "$waiting" "attention" "$tooltip"
+else
+    emit "" "idle" "No Claude Code sessions waiting"
+fi

@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""cc-focus-watch — clear a Claude Code session's "waiting" badge the instant
+its Hyprland window gains focus.
+
+Listens to the Hyprland event socket (socket2). When the newly focused window
+matches a cc-monitor session that is currently "waiting", it rewrites that
+session's state to "working" and refreshes Waybar (SIGRTMIN+8) — so merely
+focusing the window (by mouse, movefocus, or the picker) counts as "dealt with",
+without waiting for the next prompt submit.
+
+Run once per Hyprland session via exec-once. Reconnects if Hyprland restarts.
+"""
+import json
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+CACHE = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "cc-monitor"
+PREFIX = b"activewindowv2>>"
+
+
+def socket_path():
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    rt = os.environ.get("XDG_RUNTIME_DIR")
+    if not sig or not rt:
+        return None
+    return f"{rt}/hypr/{sig}/.socket2.sock"
+
+
+def refresh_waybar():
+    subprocess.run(
+        ["pkill", "-RTMIN+8", "waybar"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def on_focus(addr_hex):
+    # socket2 emits the address without the 0x prefix; cache files store it with.
+    addr = "0x" + addr_hex
+    if not CACHE.is_dir():
+        return
+    changed = False
+    for f in CACHE.glob("*.json"):
+        try:
+            data = json.loads(f.read_text())
+        except (OSError, ValueError):
+            continue
+        if data.get("window") == addr and data.get("state") == "waiting":
+            data["state"] = "working"
+            try:
+                tmp = f.with_name(f.name + ".tmp")
+                tmp.write_text(json.dumps(data))
+                tmp.replace(f)  # atomic; cc-count/picker never see a half file
+                changed = True
+            except OSError:
+                pass
+    if changed:
+        refresh_waybar()
+
+
+def main():
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    while True:
+        path = socket_path()
+        if not path or not os.path.exists(path):
+            time.sleep(2)
+            continue
+        try:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.connect(path)
+        except OSError:
+            time.sleep(2)
+            continue
+        buf = b""
+        try:
+            while True:
+                data = s.recv(8192)
+                if not data:
+                    break  # Hyprland went away; fall through and reconnect
+                buf += data
+                while b"\n" in buf:
+                    line, buf = buf.split(b"\n", 1)
+                    if line.startswith(PREFIX):
+                        addr = line[len(PREFIX):].decode(errors="replace").strip()
+                        if addr and addr != "," and addr != "0x":
+                            on_focus(addr)
+        except OSError:
+            pass
+        finally:
+            s.close()
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    main()
