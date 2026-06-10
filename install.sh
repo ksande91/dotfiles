@@ -206,6 +206,19 @@ setup_initial_theme() {
         info "No wallpapers found — applied default dark theme"
         warn "Add images to ~/Pictures/wallpaper/ and run: wal -i <image>"
     fi
+
+    # Point KDE/Qt apps (Dolphin, etc.) at the pywal-generated color scheme.
+    # kdeglobals has no "include" directive, so we symlink the whole file to
+    # the rendered template; KF6 apps read [Colors:*] from it on launch.
+    local kdeglobals="$HOME/.config/kdeglobals"
+    if [ -s "$kdeglobals" ] && [ ! -L "$kdeglobals" ]; then
+        cp "$kdeglobals" "$kdeglobals.bak"
+        warn "Backed up existing kdeglobals to kdeglobals.bak"
+    fi
+    ln -sfn "$HOME/.cache/wal/colors-kdeglobals" "$kdeglobals"
+    info "Linked kdeglobals -> ~/.cache/wal/colors-kdeglobals"
+    # KDE apps read this via the "kde" platform theme (plasma-integration),
+    # selected by QT_QPA_PLATFORMTHEME=kde in hypr/conf/environments.conf.
 }
 
 # =============================================================================
