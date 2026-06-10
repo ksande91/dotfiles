@@ -15,7 +15,7 @@ M.styles = {
 -- Slots whose color should NOT be passed through the style transform.
 -- Greys and bg/fg should stay anchored so contrast math keeps working.
 local PRESERVE = {
-  bg = true, fg = true, grey = true, br_grey = true,
+  bg = true, fg = true, grey = true, br_grey = true, comment = true,
   white = true, br_white = true,
 }
 
@@ -27,11 +27,15 @@ end
 -- Pywal-derived palette, expanded via HSL rotations into ~30 differentiated
 -- slots.  See README in this directory or the conversation that produced it.
 local function derive_palette(c)
+  -- Greys are computed from bg/fg mixes rather than pywal's wallpaper-derived
+  -- greys, which often land too close to fg and make comments unreadable.
+  -- Fixed mixes guarantee contrast regardless of wallpaper.
   return {
     bg       = c.background,
     fg       = c.foreground,
-    grey     = c.grey,
-    br_grey  = c.br_grey,
+    grey     = c.background.mix(c.foreground, 30),
+    br_grey  = c.background.mix(c.foreground, 55),
+    comment  = c.background.mix(c.foreground, 70),
     white    = c.white,
     br_white = c.br_white,
 
@@ -106,11 +110,11 @@ function M.apply()
   set(0, "Search",       { fg = bg.hex, bg = p.yellow_warm.hex, bold = true })
   set(0, "IncSearch",    { fg = bg.hex, bg = p.orange.hex,      bold = true })
   set(0, "MatchParen",   { fg = p.gold.hex, bold = true, underline = true })
-  set(0, "Pmenu",        { fg = fg.hex, bg = bg.mix(fg, 8).hex })
+  set(0, "Pmenu",        { fg = fg.hex, bg = bg.mix(fg, 12).hex })
   set(0, "PmenuSel",     { fg = bg.hex, bg = p.blue.hex, bold = true })
-  set(0, "Folded",       { fg = p.br_grey.hex, bg = bg.mix(fg, 6).hex, italic = true })
+  set(0, "Folded",       { fg = p.br_grey.hex, bg = bg.mix(fg, 10).hex, italic = true })
 
-  set(0, "Comment",                { fg = p.br_grey.hex, italic = true })
+  set(0, "Comment",                { fg = p.comment.hex, italic = true })
   set(0, "@comment",               { link = "Comment" })
   set(0, "@punctuation",           { fg = p.br_grey.hex })
   set(0, "@punctuation.bracket",   { fg = p.br_grey.hex })
