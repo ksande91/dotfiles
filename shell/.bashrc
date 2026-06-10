@@ -54,3 +54,5 @@ export NVM_DIR="$HOME/.nvm"
 export PATH=$HOME/.local/bin:$PATH
 export PATH="$HOME/.cargo/bin:$PATH"
 
+# work-nav: type 'work' to jump to a project
+source "/home/krisn/personal/work-nav/work.sh"
