@@ -20,6 +20,16 @@ error() { echo -e "${RED}[x]${NC} $1"; }
 # -----------------------------------------------------------------------------
 install_packages() {
     info "Installing system packages..."
+
+    # Bail out if sudo can't authenticate non-interactively and there is no
+    # terminal to prompt on. Otherwise each sudo call below fails instantly
+    # and pam_faillock counts it as a failed auth — three of those lock the
+    # account (deny=3). This makes update.sh safe to run non-interactively.
+    if ! sudo -n true 2>/dev/null && [ ! -t 0 ]; then
+        warn "No interactive terminal for sudo — skipping package sync"
+        return 0
+    fi
+
     sudo pacman -Syu --noconfirm || true
 
     # Read package list, ignoring comments and blank lines
