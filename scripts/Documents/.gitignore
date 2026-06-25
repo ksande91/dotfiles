@@ -1,0 +1,5 @@
+# ~/Documents is symlinked here (~/Documents -> dotfiles/scripts/Documents).
+# Ignore personal documents that land in this folder; keep only the versioned tooling.
+*
+!.gitignore
+!system/
